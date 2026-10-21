@@ -12,3 +12,13 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
 
     fragments
 }
+
+// Relleno con coordenadas baricéntricas
+pub fn triangle_barycentric(_v1: &Vertex, _v2: &Vertex, _v3: &Vertex) -> Vec<Fragment> {
+    Vec::new()
+}
+
+// Relleno por líneas horizontales
+pub fn triangle_scanline(_v1: &Vertex, _v2: &Vertex, _v3: &Vertex) -> Vec<Fragment> {
+    Vec::new()
+}

@@ -13,7 +13,7 @@ use raylib::prelude::*;
 use framebuffer::Framebuffer;
 use obj::load_obj;
 use primitive::primitive_assembly;
-use rasterizer::rasterize;
+use rasterizer::{TriangleMode, rasterize};
 use shaders::{fragment_shader, vertex_shader};
 use vertex::Vertex;
 
@@ -31,7 +31,12 @@ fn create_model_matrix(translation: Vector3, scale: f32, rotation: Vector3) -> M
         * Matrix::translate(translation.x, translation.y, translation.z)
 }
 
-fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]) {
+fn render(
+    framebuffer: &mut Framebuffer,
+    uniforms: &Uniforms,
+    vertex_array: &[Vertex],
+    mode: TriangleMode,
+) {
     // 1. Procesamiento de vértices
     let transformed_vertices: Vec<Vertex> = vertex_array
         .iter()
@@ -42,7 +47,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
     let triangles = primitive_assembly(&transformed_vertices);
 
     // 3. Rasterización
-    let fragments = rasterize(&triangles);
+    let fragments = rasterize(&triangles, mode);
 
     // 4. Procesamiento de fragmentos
     for fragment in fragments {
@@ -53,6 +58,14 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
             fragment.position.y as i32,
             color,
         );
+    }
+}
+
+fn mode_title(mode: TriangleMode) -> &'static str {
+    match mode {
+        TriangleMode::Wireframe => "Rellenar triangulos - [1] Contorno",
+        TriangleMode::FilledBarycentric => "Rellenar triangulos - [2] Baricentricas",
+        TriangleMode::FilledScanline => "Rellenar triangulos - [3] Lineas horizontales",
     }
 }
 
@@ -93,7 +106,7 @@ fn main() {
             model_matrix: model_matrix(rotation),
         };
         framebuffer.clear();
-        render(&mut framebuffer, &uniforms, &vertex_array);
+        render(&mut framebuffer, &uniforms, &vertex_array, TriangleMode::Wireframe);
         framebuffer.render_to_file("capturas/nave.png");
         println!("Captura guardada en capturas/nave.png");
         return;
@@ -106,6 +119,9 @@ fn main() {
 
     window.set_target_fps(60);
     framebuffer.init_texture(&mut window, &thread);
+
+    let mut mode = TriangleMode::Wireframe;
+    window.set_window_title(&thread, mode_title(mode));
 
     while !window.window_should_close() {
         // Rotación con flechas, R reinicia
@@ -126,12 +142,27 @@ fn main() {
             rotation = Vector3::new(0.0, 0.0, 0.0);
         }
 
+        // Modo con 1, 2 y 3
+        let new_mode = if window.is_key_pressed(KeyboardKey::KEY_ONE) {
+            Some(TriangleMode::Wireframe)
+        } else if window.is_key_pressed(KeyboardKey::KEY_TWO) {
+            Some(TriangleMode::FilledBarycentric)
+        } else if window.is_key_pressed(KeyboardKey::KEY_THREE) {
+            Some(TriangleMode::FilledScanline)
+        } else {
+            None
+        };
+        if let Some(new_mode) = new_mode {
+            mode = new_mode;
+            window.set_window_title(&thread, mode_title(mode));
+        }
+
         let uniforms = Uniforms {
             model_matrix: model_matrix(rotation),
         };
 
         framebuffer.clear();
-        render(&mut framebuffer, &uniforms, &vertex_array);
+        render(&mut framebuffer, &uniforms, &vertex_array, mode);
         framebuffer.swap_buffers(&mut window, &thread);
     }
 }
