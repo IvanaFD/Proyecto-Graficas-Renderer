@@ -86,7 +86,59 @@ pub fn triangle_barycentric(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragme
     fragments
 }
 
+// Punto de la arista a-b a la altura y
+fn edge_at_y(a: Vector3, b: Vector3, y: f32) -> (f32, f32) {
+    let t = (y - a.y) / (b.y - a.y);
+    (a.x + t * (b.x - a.x), a.z + t * (b.z - a.z))
+}
+
 // Relleno por líneas horizontales
-pub fn triangle_scanline(_v1: &Vertex, _v2: &Vertex, _v3: &Vertex) -> Vec<Fragment> {
-    Vec::new()
+pub fn triangle_scanline(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
+    let mut fragments = Vec::new();
+
+    // Caso degenerado
+    if edge_function(v1.transformed_position, v2.transformed_position, v3.transformed_position) == 0.0 {
+        return fragments;
+    }
+
+    // Ordenar por y: a arriba, c abajo
+    let mut sorted = [v1.transformed_position, v2.transformed_position, v3.transformed_position];
+    sorted.sort_by(|p, q| p.y.total_cmp(&q.y));
+    let [a, b, c] = sorted;
+
+    // Filas cuyo centro está en [a.y, c.y)
+    let first_row = (a.y - 0.5).ceil() as i32;
+    let last_row = (c.y - 0.5).ceil() as i32;
+
+    for y in first_row..last_row {
+        let py = y as f32 + 0.5;
+
+        // Arista larga a-c y arista corta a-b o b-c
+        let (x_long, z_long) = edge_at_y(a, c, py);
+        let (x_short, z_short) = if py < b.y {
+            edge_at_y(a, b, py)
+        } else {
+            edge_at_y(b, c, py)
+        };
+
+        let (x_left, z_left, x_right, z_right) = if x_long < x_short {
+            (x_long, z_long, x_short, z_short)
+        } else {
+            (x_short, z_short, x_long, z_long)
+        };
+
+        // Píxeles cuyo centro está en [x_left, x_right)
+        let first_x = (x_left - 0.5).ceil() as i32;
+        let last_x = (x_right - 0.5).ceil() as i32;
+
+        for x in first_x..last_x {
+            let px = x as f32 + 0.5;
+            let t = (px - x_left) / (x_right - x_left);
+            let depth = z_left + t * (z_right - z_left);
+
+            fragments.push(Fragment::new(x as f32, y as f32, v1.color, depth));
+        }
+    }
+
+    fragments
 }
