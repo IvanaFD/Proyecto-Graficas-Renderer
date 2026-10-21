@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+raylib = "5.5"
+
+[profile.release]
+opt-level = 3
+# Símbolos de depuración en release para que el flamegraph muestre nombres de funciones
+debug = true
