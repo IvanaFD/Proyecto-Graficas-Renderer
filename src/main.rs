@@ -5,6 +5,7 @@ mod obj;
 mod primitive;
 mod rasterizer;
 mod shaders;
+mod test_scene;
 mod triangle;
 mod vertex;
 
@@ -15,6 +16,7 @@ use obj::load_obj;
 use primitive::primitive_assembly;
 use rasterizer::{TriangleMode, rasterize};
 use shaders::{fragment_shader, vertex_shader};
+use test_scene::test_vertex_array;
 use vertex::Vertex;
 
 const WIDTH: i32 = 800;
@@ -61,12 +63,14 @@ fn render(
     }
 }
 
-fn mode_title(mode: TriangleMode) -> &'static str {
-    match mode {
-        TriangleMode::Wireframe => "Rellenar triangulos - [1] Contorno",
-        TriangleMode::FilledBarycentric => "Rellenar triangulos - [2] Baricentricas",
-        TriangleMode::FilledScanline => "Rellenar triangulos - [3] Lineas horizontales",
-    }
+fn window_title(mode: TriangleMode, show_tests: bool) -> String {
+    let mode_name = match mode {
+        TriangleMode::Wireframe => "[1] Contorno",
+        TriangleMode::FilledBarycentric => "[2] Baricentricas",
+        TriangleMode::FilledScanline => "[3] Lineas horizontales",
+    };
+    let scene_name = if show_tests { "Pruebas" } else { "Nave" };
+    format!("Rellenar triangulos - {mode_name} - [TAB] {scene_name}")
 }
 
 fn main() {
@@ -97,6 +101,12 @@ fn main() {
             * create_model_matrix(translation, scale, rotation)
     };
 
+    // Escena de pruebas: ya en coordenadas de pantalla
+    let test_vertices = test_vertex_array();
+    let test_uniforms = Uniforms {
+        model_matrix: Matrix::identity(),
+    };
+
     let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
     framebuffer.set_background_color(Vector3::new(0.08, 0.08, 0.12));
 
@@ -121,7 +131,8 @@ fn main() {
     framebuffer.init_texture(&mut window, &thread);
 
     let mut mode = TriangleMode::Wireframe;
-    window.set_window_title(&thread, mode_title(mode));
+    let mut show_tests = false;
+    window.set_window_title(&thread, &window_title(mode, show_tests));
 
     while !window.window_should_close() {
         // Rotación con flechas, R reinicia
@@ -152,17 +163,27 @@ fn main() {
         } else {
             None
         };
+        // Escena con TAB
+        let toggle_scene = window.is_key_pressed(KeyboardKey::KEY_TAB);
+        if toggle_scene {
+            show_tests = !show_tests;
+        }
         if let Some(new_mode) = new_mode {
             mode = new_mode;
-            window.set_window_title(&thread, mode_title(mode));
+        }
+        if toggle_scene || new_mode.is_some() {
+            window.set_window_title(&thread, &window_title(mode, show_tests));
         }
 
-        let uniforms = Uniforms {
-            model_matrix: model_matrix(rotation),
-        };
-
         framebuffer.clear();
-        render(&mut framebuffer, &uniforms, &vertex_array, mode);
+        if show_tests {
+            render(&mut framebuffer, &test_uniforms, &test_vertices, mode);
+        } else {
+            let uniforms = Uniforms {
+                model_matrix: model_matrix(rotation),
+            };
+            render(&mut framebuffer, &uniforms, &vertex_array, mode);
+        }
         framebuffer.swap_buffers(&mut window, &thread);
     }
 }
