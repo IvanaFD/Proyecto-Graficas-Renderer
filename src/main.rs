@@ -17,7 +17,7 @@ use framebuffer::Framebuffer;
 use obj::load_obj;
 use primitive::primitive_assembly;
 use rasterizer::{TriangleMode, rasterize};
-use shaders::{fragment_shader, vertex_shader};
+use shaders::{fragment_shader, shade_triangle, vertex_shader};
 use test_scene::{test_cases, test_vertex_array};
 use vertex::Vertex;
 
@@ -48,7 +48,15 @@ fn render(
         .collect();
 
     // 2. Ensamblaje de primitivas
-    let triangles = primitive_assembly(&transformed_vertices);
+    let mut triangles = primitive_assembly(&transformed_vertices);
+
+    // Sombreado plano en los modos de relleno
+    let filled = !matches!(mode, TriangleMode::Wireframe);
+    if filled {
+        for tri in triangles.iter_mut() {
+            shade_triangle(tri);
+        }
+    }
 
     // 3. Rasterización
     let fragments = rasterize(&triangles, mode);
@@ -56,12 +64,14 @@ fn render(
     // 4. Procesamiento de fragmentos
     for fragment in fragments {
         let color = fragment_shader(&fragment);
+        let x = fragment.position.x as i32;
+        let y = fragment.position.y as i32;
 
-        framebuffer.point(
-            fragment.position.x as i32,
-            fragment.position.y as i32,
-            color,
-        );
+        if filled {
+            framebuffer.point_with_depth(x, y, color, fragment.depth);
+        } else {
+            framebuffer.point(x, y, color);
+        }
     }
 }
 

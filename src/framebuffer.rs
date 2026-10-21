@@ -7,6 +7,7 @@ pub struct Framebuffer {
     background_color: Vector3,
     // RGBA, 4 bytes por píxel
     color_buffer: Vec<u8>,
+    depth_buffer: Vec<f32>,
     texture: Option<Texture2D>,
 }
 
@@ -27,6 +28,7 @@ impl Framebuffer {
             height,
             background_color,
             color_buffer: vec![0; (width * height * 4) as usize],
+            depth_buffer: vec![f32::NEG_INFINITY; (width * height) as usize],
             texture: None,
         };
         framebuffer.clear();
@@ -42,6 +44,7 @@ impl Framebuffer {
         for pixel in self.color_buffer.chunks_exact_mut(4) {
             pixel.copy_from_slice(&rgba);
         }
+        self.depth_buffer.fill(f32::NEG_INFINITY);
     }
 
     // Fuera de la imagen se descarta
@@ -49,6 +52,17 @@ impl Framebuffer {
         if x >= 0 && x < self.width && y >= 0 && y < self.height {
             let index = ((y * self.width + x) * 4) as usize;
             self.color_buffer[index..index + 4].copy_from_slice(&to_rgba(color));
+        }
+    }
+
+    // Solo escribe si está más cerca (z mayor) que lo que ya hay
+    pub fn point_with_depth(&mut self, x: i32, y: i32, color: Vector3, depth: f32) {
+        if x >= 0 && x < self.width && y >= 0 && y < self.height {
+            let index = (y * self.width + x) as usize;
+            if depth > self.depth_buffer[index] {
+                self.depth_buffer[index] = depth;
+                self.point(x, y, color);
+            }
         }
     }
 

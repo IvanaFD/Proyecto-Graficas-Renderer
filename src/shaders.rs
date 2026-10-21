@@ -24,6 +24,23 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
     result
 }
 
+// Sombreado plano: un tono por triángulo según su normal y la luz
+pub fn shade_triangle(tri: &mut [Vertex; 3]) {
+    let a = tri[0].transformed_position;
+    let b = tri[1].transformed_position;
+    let c = tri[2].transformed_position;
+
+    let normal = (b - a).cross(c - a).normalized();
+    let light = Vector3::new(-0.4, -0.6, 1.0).normalized();
+
+    let ambient = 0.15;
+    let intensity = ambient + (1.0 - ambient) * normal.dot(light).abs();
+
+    for vertex in tri.iter_mut() {
+        vertex.color = vertex.color * intensity;
+    }
+}
+
 // Passthrough: devuelve el color que el fragmento ya tiene
 pub fn fragment_shader(fragment: &Fragment) -> Vector3 {
     fragment.color
