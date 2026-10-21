@@ -32,6 +32,7 @@ fn is_inside(w: f32, top_left: bool) -> bool {
 }
 
 // Relleno con coordenadas baricéntricas
+#[inline(never)]
 pub fn triangle_barycentric(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
     let mut fragments = Vec::new();
 
@@ -93,6 +94,7 @@ fn edge_at_y(a: Vector3, b: Vector3, y: f32) -> (f32, f32) {
 }
 
 // Relleno por líneas horizontales
+#[inline(never)]
 pub fn triangle_scanline(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
     let mut fragments = Vec::new();
 

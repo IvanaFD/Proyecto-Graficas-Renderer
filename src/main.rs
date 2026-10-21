@@ -1,3 +1,4 @@
+mod benchmark;
 mod compare;
 mod fragment;
 mod framebuffer;
@@ -148,6 +149,15 @@ fn main() {
 
     let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
     framebuffer.set_background_color(Vector3::new(0.08, 0.08, 0.12));
+
+    if std::env::args().any(|arg| arg == "--benchmark-triangles") {
+        benchmark::run("Casos de prueba", &transform(&test_vertices, &test_uniforms));
+        let uniforms = Uniforms {
+            model_matrix: model_matrix(Vector3::new(-std::f32::consts::FRAC_PI_2, 0.0, 0.0)),
+        };
+        benchmark::run("Nave (desde arriba)", &transform(&vertex_array, &uniforms));
+        return;
+    }
 
     if std::env::args().any(|arg| arg == "--comparar") {
         run_comparison(&vertex_array, model_matrix);
