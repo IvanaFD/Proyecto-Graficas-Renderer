@@ -28,6 +28,14 @@ impl Obj {
         }
         ((min + max) / 2.0, max - min)
     }
+
+    // Distancia del centro al vértice más lejano
+    pub fn radius(&self, center: Vector3) -> f32 {
+        self.vertices
+            .iter()
+            .map(|v| (*v - center).length())
+            .fold(0.0, f32::max)
+    }
 }
 
 pub fn load_obj(path: &str) -> Result<Obj, String> {

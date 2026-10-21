@@ -72,15 +72,16 @@ fn main() {
         vertex_array.len() / 3
     );
 
-    // Centrar el modelo en el origen y ajustarlo al 80% de la ventana
-    let (center, size) = obj.bounds();
-    let scale = 0.8 * (WIDTH as f32 / size.x).min(HEIGHT as f32 / size.y);
+    // Centrar en el origen; la escala usa el radio para que quepa en cualquier ángulo
+    let (center, _) = obj.bounds();
+    let radius = obj.radius(center);
+    let scale = 0.9 * (WIDTH.min(HEIGHT) as f32 / 2.0) / radius;
     let translation = Vector3::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0, 0.0);
-    let rotation = Vector3::new(0.0, 0.0, 0.0);
+    let mut rotation = Vector3::new(0.0, 0.0, 0.0);
 
-    let uniforms = Uniforms {
-        model_matrix: Matrix::translate(-center.x, -center.y, -center.z)
-            * create_model_matrix(translation, scale, rotation),
+    let model_matrix = |rotation: Vector3| {
+        Matrix::translate(-center.x, -center.y, -center.z)
+            * create_model_matrix(translation, scale, rotation)
     };
 
     let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
@@ -88,6 +89,9 @@ fn main() {
 
     // Captura sin abrir ventana
     if std::env::args().any(|arg| arg == "--captura") {
+        let uniforms = Uniforms {
+            model_matrix: model_matrix(rotation),
+        };
         framebuffer.clear();
         render(&mut framebuffer, &uniforms, &vertex_array);
         framebuffer.render_to_file("capturas/nave.png");
@@ -104,6 +108,28 @@ fn main() {
     framebuffer.init_texture(&mut window, &thread);
 
     while !window.window_should_close() {
+        // Rotación con flechas, R reinicia
+        let step = 1.5 * window.get_frame_time();
+        if window.is_key_down(KeyboardKey::KEY_LEFT) {
+            rotation.y -= step;
+        }
+        if window.is_key_down(KeyboardKey::KEY_RIGHT) {
+            rotation.y += step;
+        }
+        if window.is_key_down(KeyboardKey::KEY_UP) {
+            rotation.x -= step;
+        }
+        if window.is_key_down(KeyboardKey::KEY_DOWN) {
+            rotation.x += step;
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_R) {
+            rotation = Vector3::new(0.0, 0.0, 0.0);
+        }
+
+        let uniforms = Uniforms {
+            model_matrix: model_matrix(rotation),
+        };
+
         framebuffer.clear();
         render(&mut framebuffer, &uniforms, &vertex_array);
         framebuffer.swap_buffers(&mut window, &thread);
