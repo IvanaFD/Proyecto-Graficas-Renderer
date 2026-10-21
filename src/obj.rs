@@ -2,9 +2,32 @@ use std::fs;
 
 use raylib::prelude::*;
 
+use crate::vertex::Vertex;
+
 pub struct Obj {
     pub vertices: Vec<Vector3>,
     pub indices: Vec<usize>,
+}
+
+impl Obj {
+    // Vértices en el orden de las caras, de tres en tres
+    pub fn get_vertex_array(&self, color: Vector3) -> Vec<Vertex> {
+        self.indices
+            .iter()
+            .map(|&index| Vertex::new_with_color(self.vertices[index], color))
+            .collect()
+    }
+
+    // Centro y tamaño de la caja que contiene al modelo
+    pub fn bounds(&self) -> (Vector3, Vector3) {
+        let mut min = Vector3::new(f32::MAX, f32::MAX, f32::MAX);
+        let mut max = Vector3::new(f32::MIN, f32::MIN, f32::MIN);
+        for v in &self.vertices {
+            min = Vector3::new(min.x.min(v.x), min.y.min(v.y), min.z.min(v.z));
+            max = Vector3::new(max.x.max(v.x), max.y.max(v.y), max.z.max(v.z));
+        }
+        ((min + max) / 2.0, max - min)
+    }
 }
 
 pub fn load_obj(path: &str) -> Result<Obj, String> {

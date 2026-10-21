@@ -1,22 +1,31 @@
 use raylib::prelude::*;
 
+// Origen arriba a la izquierda, y hacia abajo
 pub struct Framebuffer {
     pub width: i32,
     pub height: i32,
-    background_color: Color,
-    current_color: Color,
+    background_color: Vector3,
     // RGBA, 4 bytes por píxel
     color_buffer: Vec<u8>,
     texture: Option<Texture2D>,
 }
 
+fn to_rgba(color: Vector3) -> [u8; 4] {
+    [
+        (color.x.clamp(0.0, 1.0) * 255.0) as u8,
+        (color.y.clamp(0.0, 1.0) * 255.0) as u8,
+        (color.z.clamp(0.0, 1.0) * 255.0) as u8,
+        255,
+    ]
+}
+
 impl Framebuffer {
     pub fn new(width: i32, height: i32) -> Self {
+        let background_color = Vector3::new(0.0, 0.0, 0.0);
         let mut framebuffer = Framebuffer {
             width,
             height,
-            background_color: Color::BLACK,
-            current_color: Color::WHITE,
+            background_color,
             color_buffer: vec![0; (width * height * 4) as usize],
             texture: None,
         };
@@ -24,28 +33,22 @@ impl Framebuffer {
         framebuffer
     }
 
-    pub fn set_background_color(&mut self, color: Color) {
+    pub fn set_background_color(&mut self, color: Vector3) {
         self.background_color = color;
     }
 
-    pub fn set_current_color(&mut self, color: Color) {
-        self.current_color = color;
-    }
-
     pub fn clear(&mut self) {
-        let c = self.background_color;
+        let rgba = to_rgba(self.background_color);
         for pixel in self.color_buffer.chunks_exact_mut(4) {
-            pixel.copy_from_slice(&[c.r, c.g, c.b, c.a]);
+            pixel.copy_from_slice(&rgba);
         }
     }
 
-    pub fn point(&mut self, position: Vector2) {
-        let x = position.x as i32;
-        let y = position.y as i32;
+    // Fuera de la imagen se descarta
+    pub fn point(&mut self, x: i32, y: i32, color: Vector3) {
         if x >= 0 && x < self.width && y >= 0 && y < self.height {
             let index = ((y * self.width + x) * 4) as usize;
-            let c = self.current_color;
-            self.color_buffer[index..index + 4].copy_from_slice(&[c.r, c.g, c.b, c.a]);
+            self.color_buffer[index..index + 4].copy_from_slice(&to_rgba(color));
         }
     }
 
@@ -74,6 +77,7 @@ impl Framebuffer {
         );
     }
 
+    // Exportar a PNG
     pub fn render_to_file(&self, file_path: &str) {
         let mut image = Image::gen_image_color(self.width, self.height, Color::BLACK);
         for y in 0..self.height {

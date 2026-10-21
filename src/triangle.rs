@@ -1,10 +1,14 @@
-use raylib::prelude::*;
-
-use crate::framebuffer::Framebuffer;
+use crate::fragment::Fragment;
 use crate::line::line;
+use crate::vertex::Vertex;
 
-pub fn triangle(framebuffer: &mut Framebuffer, a: Vector2, b: Vector2, c: Vector2) {
-    line(framebuffer, a, b);
-    line(framebuffer, b, c);
-    line(framebuffer, c, a);
+// Contorno
+pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
+    let mut fragments = Vec::new();
+
+    fragments.extend(line(v1, v2));
+    fragments.extend(line(v2, v3));
+    fragments.extend(line(v3, v1));
+
+    fragments
 }

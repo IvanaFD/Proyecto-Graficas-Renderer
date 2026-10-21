@@ -1,28 +1,28 @@
-use raylib::prelude::*;
-
-use crate::framebuffer::Framebuffer;
+use crate::fragment::Fragment;
+use crate::vertex::Vertex;
 
 // Algoritmo de Bresenham
-pub fn line(framebuffer: &mut Framebuffer, start: Vector2, end: Vector2) {
-    let x1 = start.x.round() as i32;
-    let y1 = start.y.round() as i32;
+pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
+    let mut fragments = Vec::new();
 
-    let x2 = end.x.round() as i32;
-    let y2 = end.y.round() as i32;
+    let x0 = a.transformed_position.x.round() as i32;
+    let y0 = a.transformed_position.y.round() as i32;
+    let x1 = b.transformed_position.x.round() as i32;
+    let y1 = b.transformed_position.y.round() as i32;
 
-    let dx = (x2 - x1).abs();
-    let dy = -(y2 - y1).abs();
-    let sx = if x1 < x2 { 1 } else { -1 };
-    let sy = if y1 < y2 { 1 } else { -1 };
+    let dx = (x1 - x0).abs();
+    let dy = -(y1 - y0).abs();
+    let sx = if x0 < x1 { 1 } else { -1 };
+    let sy = if y0 < y1 { 1 } else { -1 };
     let mut err = dx + dy;
 
-    let mut x = x1;
-    let mut y = y1;
+    let mut x = x0;
+    let mut y = y0;
 
     loop {
-        framebuffer.point(Vector2::new(x as f32, y as f32));
+        fragments.push(Fragment::new(x as f32, y as f32, a.color, a.transformed_position.z));
 
-        if x == x2 && y == y2 {
+        if x == x1 && y == y1 {
             break;
         }
 
@@ -36,4 +36,6 @@ pub fn line(framebuffer: &mut Framebuffer, start: Vector2, end: Vector2) {
             y += sy;
         }
     }
+
+    fragments
 }
