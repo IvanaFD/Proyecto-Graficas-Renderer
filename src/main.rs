@@ -1,3 +1,4 @@
+mod compare;
 mod fragment;
 mod framebuffer;
 mod line;
@@ -16,7 +17,7 @@ use obj::load_obj;
 use primitive::primitive_assembly;
 use rasterizer::{TriangleMode, rasterize};
 use shaders::{fragment_shader, vertex_shader};
-use test_scene::test_vertex_array;
+use test_scene::{test_cases, test_vertex_array};
 use vertex::Vertex;
 
 const WIDTH: i32 = 800;
@@ -61,6 +62,44 @@ fn render(
             color,
         );
     }
+}
+
+fn transform(vertex_array: &[Vertex], uniforms: &Uniforms) -> Vec<[Vertex; 3]> {
+    let transformed: Vec<Vertex> = vertex_array
+        .iter()
+        .map(|vertex| vertex_shader(vertex, uniforms))
+        .collect();
+    primitive_assembly(&transformed)
+}
+
+fn run_comparison(vertex_array: &[Vertex], model_matrix: impl Fn(Vector3) -> Matrix) {
+    let mut results = Vec::new();
+
+    // Casos de prueba
+    for case in test_cases() {
+        let tri = case.positions.map(|p| Vertex::new_with_color(p, case.color));
+        results.push(compare::compare(case.name, &[tri]));
+    }
+
+    // Nave de frente y desde arriba
+    for (name, rotation) in [
+        ("nave (frente)", Vector3::new(0.0, 0.0, 0.0)),
+        ("nave (arriba)", Vector3::new(-std::f32::consts::FRAC_PI_2, 0.0, 0.0)),
+    ] {
+        let uniforms = Uniforms {
+            model_matrix: model_matrix(rotation),
+        };
+        results.push(compare::compare(name, &transform(vertex_array, &uniforms)));
+    }
+
+    compare::print_table(&results);
+
+    // Orden inverso
+    let all_same = test_cases().iter().all(|case| {
+        let tri = case.positions.map(|p| Vertex::new_with_color(p, case.color));
+        compare::same_in_reverse(&tri)
+    });
+    println!("Orden inverso genera las mismas posiciones en todos los casos: {all_same}");
 }
 
 fn window_title(mode: TriangleMode, show_tests: bool) -> String {
@@ -109,6 +148,11 @@ fn main() {
 
     let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
     framebuffer.set_background_color(Vector3::new(0.08, 0.08, 0.12));
+
+    if std::env::args().any(|arg| arg == "--comparar") {
+        run_comparison(&vertex_array, model_matrix);
+        return;
+    }
 
     // Captura sin abrir ventana
     if std::env::args().any(|arg| arg == "--captura") {
