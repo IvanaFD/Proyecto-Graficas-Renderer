@@ -174,7 +174,7 @@ fn main() {
         return;
     }
 
-    // Captura sin abrir ventana
+    // Capturas sin abrir ventana
     if std::env::args().any(|arg| arg == "--captura") {
         let uniforms = Uniforms {
             model_matrix: model_matrix(rotation),
@@ -182,7 +182,24 @@ fn main() {
         framebuffer.clear();
         render(&mut framebuffer, &uniforms, &vertex_array, TriangleMode::Wireframe);
         framebuffer.render_to_file("capturas/nave.png");
-        println!("Captura guardada en capturas/nave.png");
+
+        let top_uniforms = Uniforms {
+            model_matrix: model_matrix(Vector3::new(-std::f32::consts::FRAC_PI_2, 0.0, 0.0)),
+        };
+        for (mode, name) in [
+            (TriangleMode::Wireframe, "contorno"),
+            (TriangleMode::FilledBarycentric, "baricentrico"),
+            (TriangleMode::FilledScanline, "scanline"),
+        ] {
+            framebuffer.clear();
+            render(&mut framebuffer, &top_uniforms, &vertex_array, mode);
+            framebuffer.render_to_file(&format!("capturas/nave_{name}.png"));
+
+            framebuffer.clear();
+            render(&mut framebuffer, &test_uniforms, &test_vertices, mode);
+            framebuffer.render_to_file(&format!("capturas/pruebas_{name}.png"));
+        }
+        println!("Capturas guardadas en capturas/");
         return;
     }
 
