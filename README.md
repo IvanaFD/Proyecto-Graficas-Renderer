@@ -1,6 +1,6 @@
 # Laboratorio 4: Dibujando un modelo OBJ
 
-Renderer en Rust que carga un modelo `.obj` con un cargador propio y dibuja todos sus triángulos con las funciones `line` y `triangle`, sin usar las funciones de Raylib para cargar o dibujar modelos 3D. Raylib solo se usa para abrir la ventana y mostrar el framebuffer.
+Renderer en Rust que carga un modelo `.obj` con un cargador propio y dibuja todos sus triángulos con las funciones `line` y `triangle`.
 
 ## Resultado
 
