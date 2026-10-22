@@ -1,6 +1,6 @@
 # Laboratorio 5 — Rellenar triángulos
 
-Continuación del laboratorio 4 (rama `lab4-cargar-modelo`), donde se cargó el modelo OBJ ([`assets/nave.obj`](assets/nave.obj), 802 triángulos) con un cargador propio y se dibujaron sus triángulos como contorno. En este laboratorio esos triángulos se rellenan con dos algoritmos y se comparan.
+Continuación del [laboratorio 4](https://github.com/IvanaFD/Proyecto-Graficas-Renderer/tree/lab4-cargar-modelo), donde se cargó el modelo OBJ ([`assets/nave.obj`](assets/nave.obj), 802 triángulos) con un cargador propio y se dibujaron sus triángulos como contorno. En este laboratorio esos triángulos se rellenan con dos algoritmos y se comparan.
 
 ```bash
 cargo run --release                            # ventana: 1, 2, 3 cambian el modo; TAB cambia a la escena de pruebas; flechas rotan
